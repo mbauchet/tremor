@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import {
   Area,
   CartesianGrid,
@@ -27,6 +27,7 @@ import {
   tremorTwMerge,
 } from "lib";
 import { CurveType } from "../../../lib/inputTypes";
+import { useZoomAndPan } from "hooks/useZoomAndPan";
 
 export interface AreaChartProps extends BaseChartProps {
   stack?: boolean;
@@ -67,11 +68,32 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
 
   const yAxisDomain = getYAxisDomain(autoMinValue, minValue, maxValue);
 
+  const [loaded, setLoaded] = useState(false);
+
+  const {
+    xPadding,
+    onChartMouseDown,
+    onChartMouseUp,
+    setWrapperRef,
+    onChartMouseMove
+  } = useZoomAndPan({
+    chartLoaded: loaded
+  });
+
+  useEffect(() => {
+    setTimeout(() => {
+        setLoaded(true)
+    }, animationDuration);
+  },[])
+  
   return (
     <div ref={ref} className={tremorTwMerge("w-full h-80", className)} {...other}>
-      <ResponsiveContainer className="h-full w-full">
+      <ResponsiveContainer className="h-full w-full" ref={setWrapperRef}>
         {data?.length ? (
-          <ReChartsAreaChart data={data}>
+          <ReChartsAreaChart data={data} onMouseMove={onChartMouseMove}
+          onMouseDown={onChartMouseDown}
+          onMouseUp={onChartMouseUp}>
+            
             {showGridLines ? (
               <CartesianGrid
                 className={tremorTwMerge(
@@ -105,8 +127,10 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
               interval="preserveStartEnd"
               tickLine={false}
               axisLine={false}
-              padding={{ left: 10, right: 10 }}
+            //   padding={{ left: 10, right: 10 }}
+            padding={{ left: xPadding[0], right: xPadding[1] }}
               minTickGap={5}
+              allowDataOverflow={true}
             />
             <YAxis
               width={yAxisWidth}
