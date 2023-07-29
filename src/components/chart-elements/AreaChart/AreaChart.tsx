@@ -33,6 +33,7 @@ export interface AreaChartProps extends BaseChartProps {
   stack?: boolean;
   curveType?: CurveType;
   connectNulls?: boolean;
+  resize?: boolean;
 }
 
 const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) => {
@@ -61,6 +62,7 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
     allowDecimals = true,
     noDataText,
     className,
+    resize = false,
     ...other
   } = props;
   const [legendHeight, setLegendHeight] = useState(60);
@@ -81,10 +83,12 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
   });
 
   useEffect(() => {
-    setTimeout(() => {
-        setLoaded(true)
-    }, animationDuration);
-  },[])
+    if(resize){
+        setTimeout(() => {
+            setLoaded(true)
+        }, animationDuration);
+    }
+  },[resize])
   
   return (
     <div ref={ref} className={tremorTwMerge("w-full h-80", className)} {...other}>

@@ -200,3 +200,11 @@ WithShortAnimationDuration.args = {
   categories: ["Sales", "Successful Payments"],
   index: "month",
 };
+
+export const WithResize = ResponsiveTemplate.bind({});
+// More on args: https://storybook.js.org/docs/react/writing-stories/args
+WithResize.args = {
+  ...args,
+  data,
+  resize: true
+};
