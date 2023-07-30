@@ -52,10 +52,8 @@ const getZoomValues = (
 
 export const useZoomAndPan = ({
   chartAxisClipPadding = CHART_AXIS_CLIP_PADDING,
-  chartLoaded
 }: {
   chartAxisClipPadding?: number;
-  chartLoaded: boolean;
 }) => {
   const wrapperRef = useRef<null | HTMLElement>(null);
   const gridRef = useRef<SVGSVGElement | null>(null);
@@ -167,25 +165,25 @@ export const useZoomAndPan = ({
     chartXPaddingOnMouseDown.current = null;
   }, []);
 
-  useEffect(() => {
-    if (chartLoaded && wrapperRef.current) {
-      const grid = wrapperRef.current.querySelector(
-        `.${CHART_CLASSES.grid}`
-      ) as SVGSVGElement | null;
+//   useEffect(() => {
+//     if (chartLoaded && wrapperRef.current) {
+//       const grid = wrapperRef.current.querySelector(
+//         `.${CHART_CLASSES.grid}`
+//       ) as SVGSVGElement | null;
 
-      const xAxis = wrapperRef.current.querySelector(
-        `.${CHART_CLASSES.xAxis}`
-      ) as SVGSVGElement | null;
-      gridRef.current = grid;
-      if (xAxis) setClipPaths(xAxis);
-    }
-  }, [chartLoaded, setClipPaths]);
+//       const xAxis = wrapperRef.current.querySelector(
+//         `.${CHART_CLASSES.xAxis}`
+//       ) as SVGSVGElement | null;
+//       gridRef.current = grid;
+//       if (xAxis) setClipPaths(xAxis);
+//     }
+//   }, [chartLoaded, setClipPaths]);
 
   const zoomOut = useCallback(() => {
     setXPadding((p) => {
       const [left, right] = p;
       const { zoomRight, zoomLeft } = getZoomValues(mousePositionToGrid);
-      return [Math.min(left + zoomLeft + 5, 0), Math.min(right + zoomRight + 5, 0)];
+      return [Math.min(left + zoomLeft + 50, 0), Math.min(right + zoomRight + 50, 0)];
     });
   }, [mousePositionToGrid]);
 
@@ -193,32 +191,36 @@ export const useZoomAndPan = ({
     setXPadding((p) => {
       const [left, right] = p;
       const { zoomRight, zoomLeft } = getZoomValues(mousePositionToGrid);
-      return [Math.max(left - zoomLeft - 5, -500), Math.max(right - zoomRight - 5, -500)];
+      return [Math.max(left - zoomLeft - 50, -500), Math.max(right - zoomRight - 50, -500)];
     });
   }, [mousePositionToGrid]);
 
-  useEffect(() => {
-    const ref = wrapperRef.current;
-    const wheelHandler = (e: WheelEvent) => {
-      e.preventDefault();
-      const delta = Math.sign(e.deltaY);
-      if (delta < 0) {
-        zoomOut();
-      } else {
-        zoomIn();
-      }
-    };
+  const resetZoom = useCallback(() => {
+    setXPadding([0, 0]);
+  }, [mousePositionToGrid]);
 
-    if (chartLoaded && ref) {
-      ref.addEventListener("wheel", wheelHandler, { passive: false });
-    }
+//   useEffect(() => {
+//     const ref = wrapperRef.current;
+//     const wheelHandler = (e: WheelEvent) => {
+//       e.preventDefault();
+//       const delta = Math.sign(e.deltaY);
+//       if (delta < 0) {
+//         zoomOut();
+//       } else {
+//         zoomIn();
+//       }
+//     };
 
-    return () => {
-      if (ref) {
-        ref.removeEventListener("wheel", wheelHandler);
-      }
-    };
-  }, [chartLoaded, zoomIn, zoomOut]);
+//     if (chartLoaded && ref) {
+//       ref.addEventListener("wheel", wheelHandler, { passive: false });
+//     }
+
+//     return () => {
+//       if (ref) {
+//         ref.removeEventListener("wheel", wheelHandler);
+//       }
+//     };
+//   }, [chartLoaded, zoomIn, zoomOut]);
 
   return {
     wrapperRef,
@@ -230,6 +232,7 @@ export const useZoomAndPan = ({
     setWrapperRef,
     onChartMouseMove,
     zoomOut,
-    zoomIn
+    zoomIn,
+    resetZoom
   };
 };
