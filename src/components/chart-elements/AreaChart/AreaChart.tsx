@@ -174,7 +174,6 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
                 null
             )}
         <div ref={ref} className={tremorTwMerge("w-full h-80", className)} {...other}>
-
             <ResponsiveContainer className="h-full w-full"
                 ref={setWrapperRef}
             >
@@ -183,6 +182,7 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
                         onMouseMove={onChartMouseMove}
                         onMouseDown={onChartMouseDown}
                         onMouseUp={onChartMouseUp}
+                        className={(xPadding[0] !== 0 || xPadding[1] !== 0) ? "!cursor-move" : ""}
                     >
 
                         {showGridLines ? (
