@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import { AxisDomain } from "recharts/types/util/types";
 
-import { constructCategoryColors, getLongestValue, getYAxisDomain, getYAxisWidth } from "../common/utils";
+import { constructCategoryColors, constructDomain, elementWidth, findNumberWithLongestLength, getLongestValue, getMinMax, getYAxisDomain, getYAxisWidth } from "../common/utils";
 import BaseChartProps from "../common/BaseChartProps";
 import ChartLegend from "../common/ChartLegend";
 import ChartTooltip from "../common/ChartTooltip";
@@ -65,16 +65,27 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
     } = props;
     const [legendHeight, setLegendHeight] = useState(60);
     const categoryColors = constructCategoryColors(categories, colors);
-
+    
     const yAxisDomain = getYAxisDomain(autoMinValue, minValue, maxValue);
-    const longestValue = getLongestValue(data, categories)
+    const [min, max] = getMinMax(data, categories)
 
-    const calculatedYAxisWidth = getYAxisWidth(yAxisWidth, longestValue ? valueFormatter(longestValue) : undefined)
-    console.log(calculatedYAxisWidth);
+    const constructedDomain = constructDomain(min, max, yAxisDomain[0], yAxisDomain[1])
+    
+    console.log(min, max);
+    console.log(constructedDomain);
+
+    console.log(findNumberWithLongestLength(constructedDomain?.map(e => valueFormatter(e))));
+    const longestValue = findNumberWithLongestLength(constructedDomain?.map(e => valueFormatter(e)))
+    const longestValueWidth = elementWidth(longestValue) + (0.25 * parseFloat(getComputedStyle(document.documentElement).fontSize));
+    
+    
+    // const longestValue = getLongestValue(data, categories)
+
+    // const calculatedYAxisWidth = getYAxisWidth(yAxisWidth, longestValue ? valueFormatter(longestValue) : undefined)
     
     return (
         <div ref={ref} className={tremorTwMerge("w-full h-80", className)} {...other}>
-            {/* <span className="tabular-nums text-tremor-label">{valueFormatter(longestValue)}</span> */}
+            <span className="tabular-nums text-tremor-label">{longestValue}</span>
             <ResponsiveContainer className="h-full w-full">
                 {data?.length ? (
                     <ReChartsAreaChart data={data}>
@@ -115,7 +126,7 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
                             minTickGap={5}
                         />
                         <YAxis
-                            width={calculatedYAxisWidth}
+                            width={longestValueWidth}
                             hide={!showYAxis}
                             axisLine={false}
                             tickLine={false}
@@ -123,7 +134,7 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
                             domain={yAxisDomain as AxisDomain}
                             // tick={{ transform: "translate(-3, 0)" }}
                             tick={(props: any) =>  {
-                                console.log(props);
+                                // console.log(props);
                                 return (
                                     <foreignObject 
                                         x={0} 
@@ -142,10 +153,9 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
                                                     "dark:text-dark-tremor-content",
                                                     //auto size
                                                     "overflow-hidden text-ellipsis text-right mr-1",
-                                                    // Tabular num
-                                                    // "tabular-nums"
                                                 )
                                             }
+                                            title={valueFormatter(props.payload.value)}
                                         >
                                             {valueFormatter(props.payload.value)}
                                         </div> 
