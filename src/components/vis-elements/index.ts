@@ -5,3 +5,4 @@ export * from "./MarkerBar";
 export * from "./ProgressBar";
 export * from "./ProgressCircle";
 export * from "./Tracker";
+export * from "./Heatmap";
