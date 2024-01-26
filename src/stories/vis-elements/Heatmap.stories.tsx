@@ -71,13 +71,13 @@ export const Default: Story = {
     args: {},
 };
 
-export const With2ColorSteps: Story = {
+export const With2Steps: Story = {
     args: {
         steps: [2, 10]
     },
 };
 
-export const With6ColorSteps: Story = {
+export const With5Steps: Story = {
     args: {
         steps: [2, 4, 6, 8, 10]
     },

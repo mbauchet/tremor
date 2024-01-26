@@ -1,5 +1,5 @@
 "use client";
-import { tremorTwMerge } from "lib";
+import { getTremorBrandColor, tremorTwMerge } from "lib";
 import React from "react";
 
 import Tooltip, { useTooltip } from "components/util-elements/Tooltip/Tooltip";
@@ -30,7 +30,7 @@ const Heatmap = React.forwardRef<HTMLDivElement, HeatmapProps>((props, ref) => {
         data,
         xLabels,
         yLabels,
-        color = "blue",
+        color,
         showTooltip = true,
         steps,
         ...rest
@@ -50,7 +50,7 @@ const Heatmap = React.forwardRef<HTMLDivElement, HeatmapProps>((props, ref) => {
     const getHeatmapColor = (value: number) => {
         const index = steps.findIndex((step) => value <= step);
         const shade = stepShades[index];
-        return getColorClassNames(color, shade);
+        return color ? getColorClassNames(color, shade).bgColor : `bg-${getTremorBrandColor(shade)}`;
     };
 
 
@@ -119,11 +119,11 @@ const Heatmap = React.forwardRef<HTMLDivElement, HeatmapProps>((props, ref) => {
                                         <div
                                             className={tremorTwMerge(
                                                 makeHeatmapClassName("cell-inner"),
-                                                "w-full h-full",
+                                                "w-full h-full ",
                                                 "text-white",
                                                 "p-1 aspect-square",
                                                 "rounded-sm flex items-center justify-center",
-                                                getHeatmapColor(d.value).bgColor
+                                                getHeatmapColor(d.value)
                                             )}
                                         // style={{
                                         //     backgroundColor: `hsl(0, 0%, ${Math.floor(
