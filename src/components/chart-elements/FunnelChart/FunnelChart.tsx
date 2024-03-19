@@ -36,7 +36,11 @@ export interface FunnelChartProps extends React.SVGProps<SVGSVGElement> {
     calculateFrom?: CalculateFrom;
     color?: Color;
     variant?: FunnelVariantType;
+    yAxisPadding?: number;
 };
+
+const percentageLabels = ["100%", "75%", "50%", "25%", "0%"]
+const GLOBAL_PADDING = 20
 
 const FunnelChart = React.forwardRef<SVGSVGElement, FunnelChartProps>((props: FunnelChartProps, ref) => {
     const {
@@ -49,6 +53,7 @@ const FunnelChart = React.forwardRef<SVGSVGElement, FunnelChartProps>((props: Fu
         calculateFrom = "first",
         color,
         variant = "base",
+        yAxisPadding = 40,
         ...other
     } = props;
     const svgRef = React.useRef<SVGSVGElement>(null);
@@ -57,9 +62,9 @@ const FunnelChart = React.forwardRef<SVGSVGElement, FunnelChartProps>((props: Fu
     const [tooltip, setTooltip] = React.useState<Tooltip>({ x: 0, y: 0 })
 
     const maxValue = Math.max(...data.map(item => item.value));
-
-    const barWidth = ((width - (data.length - 1) * tickGap) - tickGap) / data.length;
-    const realHeight = height - 30
+    const widthWidthoutYAxis = width - yAxisPadding - GLOBAL_PADDING;
+    const barWidth = ((widthWidthoutYAxis - (data.length - 1) * tickGap) - tickGap) / data.length;
+    const realHeight = height - 30 - GLOBAL_PADDING
 
     const isPreviousCalculation = calculateFrom === "previous";
     const isVariantCenter = variant === "center"
@@ -92,7 +97,7 @@ const FunnelChart = React.forwardRef<SVGSVGElement, FunnelChartProps>((props: Fu
 
             const normalizedValue = value / valueToCompareWith;
             const barHeight = normalizedValue * calculationHeight;
-            const startX = index * (barWidth + tickGap) + 0.5 * tickGap;
+            const startX = index * (barWidth + tickGap) + 0.5 * tickGap + yAxisPadding
             const startY = calculationHeight - barHeight + (isPreviousCalculation ? realHeight - (prev?.barHeight ?? realHeight) : 0);
             const nextValue = data[index + 1]?.value;
             const nextNormalizedValue = nextValue / valueToCompareWith;
@@ -114,7 +119,7 @@ const FunnelChart = React.forwardRef<SVGSVGElement, FunnelChartProps>((props: Fu
 
             return acc
         }, []);
-    }, [data, width, realHeight, isPreviousCalculation, isVariantCenter]);
+    }, [data, width, realHeight, isPreviousCalculation, isVariantCenter, yAxisPadding]);
 
     return (
         <div className="relative">
@@ -124,18 +129,56 @@ const FunnelChart = React.forwardRef<SVGSVGElement, FunnelChartProps>((props: Fu
                 className={tremorTwMerge('w-full h-full', className)}
                 {...other}
             >
+                {/* Draw base grid lines */}
+                {percentageLabels.map((_, index) => (
+                    <>
+                        <line
+                            key={index}
+                            x1={yAxisPadding}
+                            y1={index * realHeight / 4 + GLOBAL_PADDING / 2}
+                            x2={width}
+                            y2={index * realHeight / 4 + GLOBAL_PADDING / 2}
+                            stroke="currentColor"
+                            className={tremorTwMerge(
+                                // common
+                                "stroke-1",
+                                // light
+                                "stroke-tremor-border",
+                                // dark
+                                "dark:stroke-dark-tremor-border",
+                            )}
+
+                        />
+                        <text
+                            x={yAxisPadding - 5}
+                            y={index * realHeight / 4 + 5 + GLOBAL_PADDING / 2}
+                            textAnchor="end"
+                            fontSize="12px"
+                            className={tremorTwMerge(
+                                // common
+                                "fill-current",
+                                // light
+                                "text-tremor-content-emphasis",
+                                // dark
+                                "dark:text-dark-tremor-content-emphasis",
+                            )}
+                        >
+                            {percentageLabels[index]}
+                        </text>
+                    </>
+                ))}
                 {formattedData.map((item, index) => (
                     <g key={index}>
                         {/* Hover gray rect */}
                         <rect
                             x={item.startX - 0.5 * tickGap}
-                            y={0}
+                            y={GLOBAL_PADDING / 2}
                             width={barWidth + tickGap}
                             height={realHeight}
                             fill="currentColor"
                             className={tremorTwMerge(
-                                "z-0",
-                                tooltip.index === index ? 'text-tremor-background-muted' : 'text-transparent',
+                                "z-0 opacity-5",
+                                tooltip.index === index ? 'text-tremor-background-emphasis' : 'text-transparent',
                             )}
                         />
 
@@ -143,7 +186,7 @@ const FunnelChart = React.forwardRef<SVGSVGElement, FunnelChartProps>((props: Fu
                         {gradient ? (
                             <rect
                                 x={item.startX}
-                                y={realHeight - (isPreviousCalculation ? formattedData[index - 1]?.barHeight || realHeight : realHeight)}
+                                y={realHeight - (isPreviousCalculation ? formattedData[index - 1]?.barHeight || realHeight : realHeight) + GLOBAL_PADDING / 2}
                                 width={barWidth}
                                 height={(realHeight - item.barHeight - (isPreviousCalculation ? realHeight - formattedData[index - 1]?.barHeight || 0 : 0)) / (isVariantCenter ? 2 : 1)}
                                 fill={`url(#base-gradient)`}
@@ -153,7 +196,7 @@ const FunnelChart = React.forwardRef<SVGSVGElement, FunnelChartProps>((props: Fu
                         {/* Draw bar */}
                         <rect
                             x={item.startX}
-                            y={isVariantCenter ? realHeight / 2 - item.barHeight / 2 : item.startY}
+                            y={(isVariantCenter ? realHeight / 2 - item.barHeight / 2 : item.startY) + GLOBAL_PADDING / 2}
                             width={barWidth}
                             height={item.barHeight}
                             fill='currentColor'
@@ -169,7 +212,7 @@ const FunnelChart = React.forwardRef<SVGSVGElement, FunnelChartProps>((props: Fu
                         {gradient && isVariantCenter ? (
                             <rect
                                 x={item.startX}
-                                y={realHeight / 2 + item.barHeight / 2}
+                                y={realHeight / 2 + item.barHeight / 2 + GLOBAL_PADDING / 2}
                                 width={barWidth}
                                 height={(realHeight - item.barHeight) / 2}
                                 fill={`url(#base-gradient-revert)`}
@@ -177,57 +220,70 @@ const FunnelChart = React.forwardRef<SVGSVGElement, FunnelChartProps>((props: Fu
                         ) : null}
 
                         {/* Draw label */}
-                        <text x={item.startX + barWidth / 2} y={realHeight + 15} textAnchor="middle" fontSize="12px" className='truncate' width={barWidth}>
+                        <text x={item.startX + barWidth / 2} y={realHeight + 15 + GLOBAL_PADDING / 2} textAnchor="middle" fontSize="12px" className='truncate' width={barWidth}>
                             {item.name}
                         </text>
 
-                        {/* hover trasnparent rect for tooltip */}
+
+                    </g>
+                ))}
+                {/* Draw gradient polygon between bars */}
+                {formattedData.map((item, index) => (
+                    <>
+                        {index < data.length - 1 && evolutionGradient ? (
+                            <>
+                                {isVariantCenter ? (
+                                    <>
+                                        <polygon
+                                            key={index}
+                                            points={`
+                                                ${item.startX + barWidth}, ${realHeight / 2 + item.nextBarHeight / 4}
+                                                ${item.nextStartX}, ${realHeight / 2 + item.nextBarHeight / 4}
+                                                ${item.nextStartX}, ${realHeight / 2 - item.nextBarHeight / 2}
+                                                ${item.startX + barWidth}, ${realHeight / 2 - item.barHeight / 2}
+                                            `}
+                                            fill={`url(#base-gradient)`}
+                                            className='z-10'
+                                        />
+                                        <polygon
+                                            key={index}
+                                            points={`
+                                                ${item.startX + barWidth}, ${realHeight / 2 + item.barHeight / 2}
+                                                ${item.nextStartX}, ${realHeight / 2 + item.nextBarHeight / 2}
+                                                ${item.nextStartX}, ${realHeight / 2 - item.nextBarHeight / 4}
+                                                ${item.startX + barWidth}, ${realHeight / 2 - item.nextBarHeight / 4}
+                                            `}
+                                            fill={`url(#base-gradient-revert)`}
+                                            className='z-10'
+                                        />
+                                    </>
+                                ) : (
+                                    <polygon
+                                        key={index}
+                                        points={`
+                                            ${item.startX + barWidth + yAxisPadding }, ${item.startY + GLOBAL_PADDING / 2} 
+                                            ${item.nextStartX + yAxisPadding }, ${realHeight - item.nextBarHeight + GLOBAL_PADDING / 2} 
+                                            ${item.nextStartX + yAxisPadding }, ${realHeight + GLOBAL_PADDING / 2} 
+                                            ${item.startX + barWidth + yAxisPadding }, ${realHeight + GLOBAL_PADDING / 2}
+                                        `}
+                                        fill={`url(#base-gradient)`}
+                                        className='z-10'
+                                    />
+                                )}
+
+                            </>
+                        ) : null}
+                        {/* hover transparent rect for tooltip */}
                         <rect
                             x={item.startX - 0.5 * tickGap}
-                            y={0}
+                            y={GLOBAL_PADDING / 2}
                             width={barWidth + tickGap}
                             height={realHeight}
                             fill="transparent"
                             onMouseEnter={() => setTooltip({ x: item.startX, y: item.startY, data: item, index })}
                             onMouseLeave={() => setTooltip({ x: 0, y: 0 })}
                         />
-                    </g>
-                ))}
-                {/* Draw gradient polygon between bars */}
-                {formattedData.map((item, index) => (
-                    index < data.length - 1 && evolutionGradient ? (
-                        <>
-                            <polygon
-                                key={index}
-                                points={!isVariantCenter ? `
-                                        ${item.startX + barWidth}, ${item.startY} 
-                                        ${item.nextStartX}, ${realHeight - item.nextBarHeight} 
-                                        ${item.nextStartX}, ${realHeight} 
-                                        ${item.startX + barWidth}, ${realHeight}
-                                    ` : `
-                                        ${item.startX + barWidth}, ${realHeight / 2 + item.nextBarHeight / 4}
-                                        ${item.nextStartX}, ${realHeight / 2 + item.nextBarHeight / 4}
-                                        ${item.nextStartX}, ${realHeight / 2 - item.nextBarHeight / 2}
-                                        ${item.startX + barWidth}, ${realHeight / 2 - item.barHeight / 2}
-                                    `}
-                                fill={`url(#base-gradient)`}
-                                className='z-10'
-                            />
-                            {isVariantCenter ? (
-                                <polygon
-                                    key={index}
-                                    points={`
-                                        ${item.startX + barWidth}, ${realHeight / 2 + item.barHeight / 2}
-                                        ${item.nextStartX}, ${realHeight / 2 + item.nextBarHeight / 2}
-                                        ${item.nextStartX}, ${realHeight / 2 - item.nextBarHeight / 4}
-                                        ${item.startX + barWidth}, ${realHeight / 2 - item.nextBarHeight / 4}
-                                    `}
-                                    fill={`url(#base-gradient-revert)`}
-                                    className='z-10'
-                                />
-                            ) : null} 
-                        </>
-                    ) : null
+                    </>
                 ))}
                 <linearGradient
                     id={"base-gradient"}
