@@ -30,6 +30,43 @@ type DataT = {
 const GLOBAL_PADDING = 20;
 const Y_AXIS_LABELS = ["100%", "75%", "50%", "25%", "0%"];
 
+type ValuesBoxProps = {
+    item: FormattedDataT;
+    valueFormatter: (value: number) => string;
+    color: Color;
+}
+
+const ValueBox = (props: ValuesBoxProps) => {
+    const { item, valueFormatter, color } = props;
+    return (
+        <div
+            className={tremorTwMerge(
+                "absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2",
+                "flex flex-col gap-1 justify-center items-center",
+                "bg-tremor-background dark:bg-dark-tremor-background text-2xl font-semibold border border-tremor-border dark:border-dark-tremor-border",
+                "w-[80%] truncate p-1",
+                "rounded-tremor-small text-xs",
+                "shadow-tremor-card dark:shadow-tremor-card",
+            )}
+        >
+            <span>
+                {valueFormatter(item.value)}
+            </span>
+            <span
+                className={tremorTwMerge(
+                    "text-xs font-normal px-2 py-0.5 rounded-tremor-small",
+                    getColorClassNames(color, colorPalette.lightBackground).bgColor,
+                    getColorClassNames(color, colorPalette.background).textColor
+                )}
+            >
+                {`${(item.normalizedValue * 100).toFixed(0)}%`}
+            </span>
+            {/* {showPercentage ? (
+            ) : null} */}
+        </div>
+    )
+}
+
 export interface FunnelChartProps extends React.SVGProps<SVGSVGElement> {
     data: DataT[];
     tickGap?: number;
@@ -42,6 +79,8 @@ export interface FunnelChartProps extends React.SVGProps<SVGSVGElement> {
     yAxisPadding?: number;
     showYAxis?: boolean;
     showGridLines?: boolean;
+    showValueBox?: boolean;
+    showTooltip?: boolean;
 };
 
 const FunnelChart = React.forwardRef<SVGSVGElement, FunnelChartProps>((props: FunnelChartProps, ref) => {
@@ -58,6 +97,8 @@ const FunnelChart = React.forwardRef<SVGSVGElement, FunnelChartProps>((props: Fu
         showGridLines = true,
         showYAxis = calculateFrom === "previous" ? false : true,
         yAxisPadding = showYAxis ? 45 : 0,
+        showValueBox = true,
+        showTooltip = true,
         ...other
     } = props;
     const svgRef = React.useRef<SVGSVGElement>(null);
@@ -243,8 +284,21 @@ const FunnelChart = React.forwardRef<SVGSVGElement, FunnelChartProps>((props: Fu
                         >
                             {item.name}
                         </text>
-
-                        
+                        {showValueBox ? (
+                            <foreignObject
+                            x={item.startX + GLOBAL_PADDING / 2 + yAxisPadding}
+                            y={Math.min(...[0.78 * (realHeight  + GLOBAL_PADDING / 2), (isVariantCenter ? realHeight / 2 - item.barHeight / 2 : item.startY) + GLOBAL_PADDING / 2])}
+                            width={barWidth}
+                            height={Math.max(...[50, item.barHeight])}
+                                className='relative'
+                            >
+                                <ValueBox 
+                                    item={item} 
+                                    valueFormatter={valueFormatter} 
+                                    color={color ?? BaseColors.Blue}
+                                />
+                            </foreignObject>
+                        ) : null}
                     </g>
                 ))}
                 {/* Draw gradient polygon between bars */}
@@ -349,7 +403,7 @@ const FunnelChart = React.forwardRef<SVGSVGElement, FunnelChartProps>((props: Fu
                 </linearGradient>
             </svg>
             {/* TBD: Deal with tooltip that can overflow */}
-            {tooltip.data ? (
+            {showTooltip && tooltip.data ? (
                 <div
                     className="absolute top-0"
                     style={{
