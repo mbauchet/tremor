@@ -33,6 +33,7 @@ import {
   tremorTwMerge,
 } from "lib";
 import { CurveType } from "../../../lib/inputTypes";
+import { useInternalState } from "hooks";
 
 export interface AreaChartProps extends BaseChartProps {
   stack?: boolean;
@@ -41,11 +42,21 @@ export interface AreaChartProps extends BaseChartProps {
   showGradient?: boolean;
   defaultActiveCategory?: string;
   defaultActiveDot?: ActiveDot;
+  activeElement?: ActiveElement;
+  defaultActiveElement?: ActiveElement;
 }
 
 interface ActiveDot {
   index?: number;
   dataKey?: string;
+}
+
+type ActiveElement = {
+    category?: string;
+    activeDot?: {
+        index?: number;
+        dataKey?: string;
+    };
 }
 
 const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) => {
@@ -82,13 +93,15 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
     tickGap = 5,
     defaultActiveCategory,
     defaultActiveDot,
+    defaultActiveElement,
+    activeElement: active,
     ...other
   } = props;
   const CustomTooltip = customTooltip;
   const paddingValue = (!showXAxis && !showYAxis) || (startEndOnly && !showYAxis) ? 0 : 20;
   const [legendHeight, setLegendHeight] = useState(60);
-  const [activeDot, setActiveDot] = useState<ActiveDot | undefined>(defaultActiveDot);
-  const [activeLegend, setActiveLegend] = useState<string | undefined>(defaultActiveCategory ?? defaultActiveDot?.dataKey);
+  
+  const [activeElement, setActiveElement] = useInternalState<ActiveElement | undefined>(defaultActiveElement, active);
 
   const categoryColors = constructCategoryColors(categories, colors);
 
@@ -99,45 +112,46 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
     event.stopPropagation();
 
     if (!hasOnValueChange) return;
-    if (
-      (itemData.index === activeDot?.index && itemData.dataKey === activeDot?.dataKey) ||
-      (hasOnlyOneValueForThisKey(data, itemData.dataKey) &&
-        activeLegend &&
-        activeLegend === itemData.dataKey)
+    if(
+        (activeElement?.activeDot?.index === itemData.index && activeElement?.activeDot?.dataKey === itemData.dataKey) ||
+        (hasOnlyOneValueForThisKey(data, itemData.dataKey) && activeElement?.category === itemData.dataKey)
     ) {
-      setActiveLegend(undefined);
-      setActiveDot(undefined);
+        setActiveElement(undefined);
       onValueChange?.(null);
     } else {
-      setActiveLegend(itemData.dataKey);
-      setActiveDot({
-        index: itemData.index,
-        dataKey: itemData.dataKey,
-      });
+        setActiveElement({
+            category: itemData.dataKey,
+            activeDot: {
+                index: itemData.index,
+                dataKey: itemData.dataKey,
+            }
+        });
       onValueChange?.({
         eventType: "dot",
         categoryClicked: itemData.dataKey,
-        ...itemData.payload,
+        ...{...itemData.payload, index: itemData.index},
       });
     }
   }
 
   function onCategoryClick(dataKey: string) {
     if (!hasOnValueChange) return;
-    if (
-      (dataKey === activeLegend && !activeDot) ||
-      (hasOnlyOneValueForThisKey(data, dataKey) && activeDot && activeDot.dataKey === dataKey)
+    if(
+        (dataKey === activeElement?.category && !activeElement?.activeDot) ||
+        (hasOnlyOneValueForThisKey(data, dataKey) && activeElement?.activeDot?.dataKey === dataKey)
     ) {
-      setActiveLegend(undefined);
+    setActiveElement(undefined)
       onValueChange?.(null);
     } else {
-      setActiveLegend(dataKey);
+        setActiveElement({
+            category: dataKey,
+            activeDot: undefined
+        });
       onValueChange?.({
         eventType: "category",
         categoryClicked: dataKey,
       });
     }
-    setActiveDot(undefined);
   }
   return (
     <div ref={ref} className={tremorTwMerge("w-full h-80", className)} {...other}>
@@ -146,10 +160,9 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
           <ReChartsAreaChart
             data={data}
             onClick={
-              hasOnValueChange && (activeLegend || activeDot)
+            hasOnValueChange && (activeElement?.category || activeElement?.activeDot)
                 ? () => {
-                    setActiveDot(undefined);
-                    setActiveLegend(undefined);
+                    setActiveElement(undefined);
                     onValueChange?.(null);
                   }
                 : undefined
@@ -254,7 +267,7 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
                     { payload },
                     categoryColors,
                     setLegendHeight,
-                    activeLegend,
+                    activeElement?.category,
                     hasOnValueChange
                       ? (clickedLegendItem: string) => onCategoryClick(clickedLegendItem)
                       : undefined,
@@ -284,7 +297,7 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
                         offset="5%"
                         stopColor="currentColor"
                         stopOpacity={
-                          activeDot || (activeLegend && activeLegend !== category) ? 0.15 : 0.4
+                        activeElement?.activeDot || (activeElement?.category && activeElement?.category !== category) ? 0.15 : 0.4
                         }
                       />
                       <stop offset="95%" stopColor="currentColor" stopOpacity={0} />
@@ -306,7 +319,7 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
                       <stop
                         stopColor="currentColor"
                         stopOpacity={
-                          activeDot || (activeLegend && activeLegend !== category) ? 0.1 : 0.3
+                        activeElement?.activeDot || (activeElement?.category && activeElement?.category !== category) ? 0.1 : 0.3
                         }
                       />
                     </linearGradient>
@@ -322,7 +335,7 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
                     colorPalette.text,
                   ).strokeColor
                 }
-                strokeOpacity={activeDot || (activeLegend && activeLegend !== category) ? 0.3 : 1}
+                strokeOpacity={activeElement?.activeDot || (activeElement?.category && activeElement?.category !== category) ? 0.3 : 1}
                 activeDot={(props: any) => {
                   const { cx, cy, stroke, strokeLinecap, strokeLinejoin, strokeWidth, dataKey } =
                     props;
@@ -359,12 +372,10 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
                     dataKey,
                     index,
                   } = props;
-
-                  if (
-                    (hasOnlyOneValueForThisKey(data, category) &&
-                      !(activeDot || (activeLegend && activeLegend !== category))) ||
-                    (activeDot?.index === index && activeDot?.dataKey === category)
-                  ) {
+                if(
+                    (hasOnlyOneValueForThisKey(data, category) && !(activeElement?.activeDot || (activeElement?.category && activeElement?.category !== category))) ||
+                    (activeElement?.activeDot?.index === index && activeElement?.activeDot?.dataKey === category)
+                ) {
                     return (
                       <Dot
                         key={index}

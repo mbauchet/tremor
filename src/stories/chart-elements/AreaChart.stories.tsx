@@ -2,7 +2,7 @@ import React from "react";
 
 import type { Meta, StoryObj } from "@storybook/react";
 
-import { AreaChart } from "components";
+import { AreaChart, Select, SelectItem } from "components";
 import { CustomTooltipProps } from "components/chart-elements/common/CustomTooltipProps";
 import { Color, currencyValueFormatter } from "lib";
 import {
@@ -372,4 +372,51 @@ export const defaultActiveDot: Story = {
     args: {
       defaultActiveDot: {index: 2, dataKey: "Sales"},
     },
+};
+
+export const controlledActiveElement: Story = {
+    args: {
+        activeElement: {category: "Sales"}
+    },
+    render: ({ activeElement, categories, ...args }) => {
+        const [active, setActive] = React.useState(activeElement);
+
+        return (
+            <div className="flex flex-col items-start">
+                <div className="flex items-center gap-4">
+                    <Select
+                        placeholder="Select category"
+                        value={active?.category}
+                        onValueChange={(v) => setActive(v ? {category: v} : undefined)}
+                        enableClear
+                    >
+                        {categories.map((category) => (
+                            <SelectItem key={category} value={category}>
+                                {category}
+                            </SelectItem>
+                        ))}
+                    </Select>
+                </div>
+
+                <AreaChart
+                    {...args}
+                    categories={categories}
+                    activeElement={active}
+                    onValueChange={(v) => {
+                        if(!v) {
+                            setActive(undefined);
+                            return;
+                        }
+    
+                        if(v.eventType === "category") {
+                            setActive({category: v.categoryClicked});
+                        } else {
+                            setActive({category: v.categoryClicked, activeDot: {index: Number(v.index), dataKey: v.categoryClicked}});
+                        }
+                        
+                    }}
+                />
+            </div>
+        );
+    }
 };
