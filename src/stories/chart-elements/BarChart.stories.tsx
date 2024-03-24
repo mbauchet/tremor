@@ -383,3 +383,9 @@ export const defaultActiveCategory: Story = {
       defaultActiveCategory: "Sales",
     },
 };
+
+export const defaultActiveBar: Story = {
+    args: {
+      defaultActiveBar: {index: 2, dataKey: "Sales"},
+    },
+};

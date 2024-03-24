@@ -1,16 +1,16 @@
 "use client";
 import React, { useState } from "react";
 import {
-  CartesianGrid,
-  Dot,
-  Legend,
-  ResponsiveContainer,
-  Scatter,
-  ScatterChart as ReChartsScatterChart,
-  Tooltip,
-  XAxis,
-  YAxis,
-  ZAxis,
+    CartesianGrid,
+    Dot,
+    Legend,
+    ResponsiveContainer,
+    Scatter,
+    ScatterChart as ReChartsScatterChart,
+    Tooltip,
+    XAxis,
+    YAxis,
+    ZAxis,
 } from "recharts";
 import { AxisDomain } from "recharts/types/util/types";
 
@@ -20,350 +20,366 @@ import ScatterChartTooltip from "components/chart-elements/ScatterChart/ScatterC
 import BaseAnimationTimingProps from "../common/BaseAnimationTimingProps";
 import NoData from "../common/NoData";
 import {
-  constructCategories,
-  constructCategoryColors,
-  deepEqual,
-  getYAxisDomain,
+    constructCategories,
+    constructCategoryColors,
+    deepEqual,
+    getYAxisDomain,
 } from "../common/utils";
 
 import { CustomTooltipProps } from "components/chart-elements/common/CustomTooltipProps";
 import {
-  BaseColors,
-  colorPalette,
-  defaultValueFormatter,
-  getColorClassNames,
-  themeColorRange,
-  tremorTwMerge,
+    BaseColors,
+    colorPalette,
+    defaultValueFormatter,
+    getColorClassNames,
+    themeColorRange,
+    tremorTwMerge,
 } from "lib";
 import { Color, ValueFormatter, IntervalType } from "../../../lib/inputTypes";
 
 export type ScatterChartValueFormatter = {
-  x?: ValueFormatter;
-  y?: ValueFormatter;
-  size?: ValueFormatter;
+    x?: ValueFormatter;
+    y?: ValueFormatter;
+    size?: ValueFormatter;
+};
+
+type ActiveNode = {
+    index: number;
 };
 
 export interface ScatterChartProps
-  extends BaseAnimationTimingProps,
+    extends BaseAnimationTimingProps,
     React.HTMLAttributes<HTMLDivElement> {
-  data: any[];
-  x: string;
-  y: string;
-  category: string;
-  size?: string;
-  valueFormatter?: ScatterChartValueFormatter;
-  sizeRange?: number[];
-  colors?: (Color | string)[];
-  showOpacity?: boolean;
-  startEndOnly?: boolean;
-  showXAxis?: boolean;
-  showYAxis?: boolean;
-  yAxisWidth?: number;
-  intervalType?: IntervalType;
-  showTooltip?: boolean;
-  showLegend?: boolean;
-  showGridLines?: boolean;
-  autoMinXValue?: boolean;
-  minXValue?: number;
-  maxXValue?: number;
-  autoMinYValue?: boolean;
-  minYValue?: number;
-  maxYValue?: number;
-  allowDecimals?: boolean;
-  noDataText?: string;
-  enableLegendSlider?: boolean;
-  onValueChange?: (value: EventProps) => void;
-  customTooltip?: React.ComponentType<CustomTooltipProps>;
-  rotateLabelX?: {
-    angle: number;
-    verticalShift: number;
-    xAxisHeight: number;
-  };
-  tickGap?: number;
-  defaultActiveCategory?: string;
+    data: any[];
+    x: string;
+    y: string;
+    category: string;
+    size?: string;
+    valueFormatter?: ScatterChartValueFormatter;
+    sizeRange?: number[];
+    colors?: (Color | string)[];
+    showOpacity?: boolean;
+    startEndOnly?: boolean;
+    showXAxis?: boolean;
+    showYAxis?: boolean;
+    yAxisWidth?: number;
+    intervalType?: IntervalType;
+    showTooltip?: boolean;
+    showLegend?: boolean;
+    showGridLines?: boolean;
+    autoMinXValue?: boolean;
+    minXValue?: number;
+    maxXValue?: number;
+    autoMinYValue?: boolean;
+    minYValue?: number;
+    maxYValue?: number;
+    allowDecimals?: boolean;
+    noDataText?: string;
+    enableLegendSlider?: boolean;
+    onValueChange?: (value: EventProps) => void;
+    customTooltip?: React.ComponentType<CustomTooltipProps>;
+    rotateLabelX?: {
+        angle: number;
+        verticalShift: number;
+        xAxisHeight: number;
+    };
+    tickGap?: number;
+    defaultActiveCategory?: string;
+    defaultActiveNode?: ActiveNode;
 }
 
 const renderShape = (props: any, activeNode: any | undefined, activeLegend: string | undefined) => {
-  const { cx, cy, width, node, fillOpacity, name } = props;
+    const { cx, cy, width, node, fillOpacity, name } = props;
 
-  return (
-    <Dot
-      cx={cx}
-      cy={cy}
-      r={width / 2}
-      opacity={
-        activeNode || (activeLegend && activeLegend !== name)
-          ? deepEqual(activeNode, node)
-            ? fillOpacity
-            : 0.3
-          : fillOpacity
-      }
-    />
-  );
+    return (
+        <Dot
+            cx={cx}
+            cy={cy}
+            r={width / 2}
+            opacity={
+                activeNode || (activeLegend && activeLegend !== name)
+                    ? deepEqual(activeNode, node)
+                        ? fillOpacity
+                        : 0.3
+                    : fillOpacity
+            }
+        />
+    );
 };
 
 const ScatterChart = React.forwardRef<HTMLDivElement, ScatterChartProps>((props, ref) => {
-  const {
-    data = [],
-    x,
-    y,
-    size,
-    category,
-    colors = themeColorRange,
-    showOpacity = false,
-    sizeRange = [1, 1000],
-    valueFormatter = {
-      x: defaultValueFormatter,
-      y: defaultValueFormatter,
-      size: defaultValueFormatter,
-    },
-    startEndOnly = false,
-    showXAxis = true,
-    showYAxis = true,
-    yAxisWidth = 56,
-    intervalType = "equidistantPreserveStart",
-    animationDuration = 900,
-    showAnimation = false,
-    showTooltip = true,
-    showLegend = true,
-    showGridLines = true,
-    autoMinXValue = false,
-    minXValue,
-    maxXValue,
-    autoMinYValue = false,
-    minYValue,
-    maxYValue,
-    allowDecimals = true,
-    noDataText,
-    onValueChange,
-    customTooltip,
-    rotateLabelX,
-    className,
-    enableLegendSlider = false,
-    tickGap = 5,
-    defaultActiveCategory,
-    ...other
-  } = props;
-  const CustomTooltip = customTooltip;
-  const [legendHeight, setLegendHeight] = useState(60);
-  const [activeNode, setActiveNode] = React.useState<any | undefined>(undefined);
-  const [activeLegend, setActiveLegend] = useState<string | undefined>(defaultActiveCategory);
-  const hasOnValueChange = !!onValueChange;
+    const {
+        data = [],
+        x,
+        y,
+        size,
+        category,
+        colors = themeColorRange,
+        showOpacity = false,
+        sizeRange = [1, 1000],
+        valueFormatter = {
+            x: defaultValueFormatter,
+            y: defaultValueFormatter,
+            size: defaultValueFormatter,
+        },
+        startEndOnly = false,
+        showXAxis = true,
+        showYAxis = true,
+        yAxisWidth = 56,
+        intervalType = "equidistantPreserveStart",
+        animationDuration = 900,
+        showAnimation = false,
+        showTooltip = true,
+        showLegend = true,
+        showGridLines = true,
+        autoMinXValue = false,
+        minXValue,
+        maxXValue,
+        autoMinYValue = false,
+        minYValue,
+        maxYValue,
+        allowDecimals = true,
+        noDataText,
+        onValueChange,
+        customTooltip,
+        rotateLabelX,
+        className,
+        enableLegendSlider = false,
+        tickGap = 5,
+        defaultActiveCategory,
+        defaultActiveNode,
+        ...other
+    } = props;
+    const CustomTooltip = customTooltip;
+    const [legendHeight, setLegendHeight] = useState(60);
 
-  function onNodeClick(data: any, index: number, event: React.MouseEvent) {
-    event.stopPropagation();
-    if (!hasOnValueChange) return;
-    if (deepEqual(activeNode, data.node)) {
-      setActiveLegend(undefined);
-      setActiveNode(undefined);
-      onValueChange?.(null);
-    } else {
-      setActiveNode(data.node);
-      setActiveLegend(data.payload[category]);
-      onValueChange?.({
-        eventType: "bubble",
-        categoryClicked: data.payload[category],
-        ...data.payload,
-      });
+    const findedActiveNode = defaultActiveNode ? data.find((_, i) => i === defaultActiveNode?.index) : undefined;
+    let findedActiveNodeWithoutCategory;
+    if (findedActiveNode) {
+        const { [category]: _, ...other } = findedActiveNode;
+        findedActiveNodeWithoutCategory = other;
     }
-  }
+    
+    const [activeNode, setActiveNode] = React.useState<any | undefined>(findedActiveNodeWithoutCategory);
+    const [activeLegend, setActiveLegend] = useState<string | undefined>(defaultActiveCategory ?? (findedActiveNodeWithoutCategory ? findedActiveNode?.[category] : undefined));
+    const hasOnValueChange = !!onValueChange;
 
-  function onCategoryClick(dataKey: string) {
-    if (!hasOnValueChange) return;
-    if (dataKey === activeLegend && !activeNode) {
-      setActiveLegend(undefined);
-      onValueChange?.(null);
-    } else {
-      setActiveLegend(dataKey);
-      onValueChange?.({
-        eventType: "category",
-        categoryClicked: dataKey,
-      });
+
+    function onNodeClick(data: any, index: number, event: React.MouseEvent) {
+        event.stopPropagation();
+        if (!hasOnValueChange) return;
+        const newActiveNode = { ...data.node };
+        if (deepEqual(activeNode, newActiveNode)) {
+            setActiveLegend(undefined);
+            setActiveNode(undefined);
+            onValueChange?.(null);
+        } else {
+            setActiveNode(newActiveNode);
+            setActiveLegend(data.payload[category]);
+            onValueChange?.({
+                eventType: "bubble",
+                categoryClicked: data.payload[category],
+                ...data.payload,
+            });
+        }
     }
-    setActiveNode(undefined);
-  }
 
-  const categories = constructCategories(data, category);
-  const categoryColors = constructCategoryColors(categories, colors);
+    function onCategoryClick(dataKey: string) {
+        if (!hasOnValueChange) return;
+        if (dataKey === activeLegend && !activeNode) {
+            setActiveLegend(undefined);
+            onValueChange?.(null);
+        } else {
+            setActiveLegend(dataKey);
+            onValueChange?.({
+                eventType: "category",
+                categoryClicked: dataKey,
+            });
+        }
+        setActiveNode(undefined);
+    }
 
-  //maybe rename getYAxisDomain to getAxisDomain
-  const xAxisDomain = getYAxisDomain(autoMinXValue, minXValue, maxXValue);
-  const yAxisDomain = getYAxisDomain(autoMinYValue, minYValue, maxYValue);
+    const categories = constructCategories(data, category);
+    const categoryColors = constructCategoryColors(categories, colors);
 
-  return (
-    <div ref={ref} className={tremorTwMerge("w-full h-80", className)} {...other}>
-      <ResponsiveContainer className="h-full w-full">
-        {data?.length ? (
-          <ReChartsScatterChart
-            onClick={
-              hasOnValueChange && (activeLegend || activeNode)
-                ? () => {
-                    setActiveNode(undefined);
-                    setActiveLegend(undefined);
-                    onValueChange?.(null);
-                  }
-                : undefined
-            }
-            margin={{ left: 20, right: 20 }}
-          >
-            {showGridLines ? (
-              <CartesianGrid
-                className={tremorTwMerge(
-                  // common
-                  "stroke-1",
-                  // light
-                  "stroke-tremor-border",
-                  // dark
-                  "dark:stroke-dark-tremor-border",
-                )}
-                horizontal={true}
-                vertical={true}
-              />
-            ) : null}
-            {x ? (
-              <XAxis
-                hide={!showXAxis}
-                dataKey={x}
-                interval={startEndOnly ? "preserveStartEnd" : intervalType}
-                tick={{ transform: "translate(0, 6)" }}
-                ticks={startEndOnly ? [data[0][x], data[data.length - 1][x]] : undefined}
-                type="number"
-                name={x}
-                fill=""
-                stroke=""
-                className={tremorTwMerge(
-                  // common
-                  "text-tremor-label",
-                  // light
-                  "fill-tremor-content",
-                  // dark
-                  "dark:fill-dark-tremor-content",
-                )}
-                tickLine={false}
-                tickFormatter={valueFormatter.x}
-                axisLine={false}
-                minTickGap={tickGap}
-                domain={xAxisDomain as AxisDomain}
-                allowDataOverflow={true}
-                angle={rotateLabelX?.angle}
-                dy={rotateLabelX?.verticalShift}
-                height={rotateLabelX?.xAxisHeight}
-              />
-            ) : null}
-            {y ? (
-              <YAxis
-                width={yAxisWidth}
-                hide={!showYAxis}
-                axisLine={false}
-                tickLine={false}
-                dataKey={y}
-                type="number"
-                name={y}
-                domain={yAxisDomain as AxisDomain}
-                tick={{ transform: "translate(-3, 0)" }}
-                tickFormatter={valueFormatter.y}
-                fill=""
-                stroke=""
-                className={tremorTwMerge(
-                  // common
-                  "text-tremor-label",
-                  // light
-                  "fill-tremor-content",
-                  // dark
-                  "dark:fill-dark-tremor-content",
-                )}
-                allowDecimals={allowDecimals}
-                allowDataOverflow={true}
-              />
-            ) : null}
-            <Tooltip
-              wrapperStyle={{ outline: "none" }}
-              isAnimationActive={false}
-              cursor={{ stroke: "#d1d5db", strokeWidth: 1 }}
-              content={
-                showTooltip ? (
-                  ({ active, payload, label }) => {
-                    const color = category ? payload?.[0]?.payload?.[category] : label;
-                    return CustomTooltip ? (
-                      <CustomTooltip
-                        payload={payload?.map((payloadItem) => ({
-                          ...payloadItem,
-                          color: categoryColors.get(color) ?? BaseColors.Gray,
-                        }))}
-                        active={active}
-                        label={color}
-                      />
-                    ) : (
-                      <ScatterChartTooltip
-                        active={active}
-                        payload={payload}
-                        label={color}
-                        valueFormatter={valueFormatter}
-                        axis={{ x: x, y: y, size: size }}
-                        category={category}
-                        categoryColors={categoryColors}
-                      />
-                    );
-                  }
+    //maybe rename getYAxisDomain to getAxisDomain
+    const xAxisDomain = getYAxisDomain(autoMinXValue, minXValue, maxXValue);
+    const yAxisDomain = getYAxisDomain(autoMinYValue, minYValue, maxYValue);
+
+    return (
+        <div ref={ref} className={tremorTwMerge("w-full h-80", className)} {...other}>
+            <ResponsiveContainer className="h-full w-full">
+                {data?.length ? (
+                    <ReChartsScatterChart
+                        onClick={
+                            hasOnValueChange && (activeLegend || activeNode)
+                                ? () => {
+                                    setActiveNode(undefined);
+                                    setActiveLegend(undefined);
+                                    onValueChange?.(null);
+                                }
+                                : undefined
+                        }
+                        margin={{ left: 20, right: 20 }}
+                    >
+                        {showGridLines ? (
+                            <CartesianGrid
+                                className={tremorTwMerge(
+                                    // common
+                                    "stroke-1",
+                                    // light
+                                    "stroke-tremor-border",
+                                    // dark
+                                    "dark:stroke-dark-tremor-border",
+                                )}
+                                horizontal={true}
+                                vertical={true}
+                            />
+                        ) : null}
+                        {x ? (
+                            <XAxis
+                                hide={!showXAxis}
+                                dataKey={x}
+                                interval={startEndOnly ? "preserveStartEnd" : intervalType}
+                                tick={{ transform: "translate(0, 6)" }}
+                                ticks={startEndOnly ? [data[0][x], data[data.length - 1][x]] : undefined}
+                                type="number"
+                                name={x}
+                                fill=""
+                                stroke=""
+                                className={tremorTwMerge(
+                                    // common
+                                    "text-tremor-label",
+                                    // light
+                                    "fill-tremor-content",
+                                    // dark
+                                    "dark:fill-dark-tremor-content",
+                                )}
+                                tickLine={false}
+                                tickFormatter={valueFormatter.x}
+                                axisLine={false}
+                                minTickGap={tickGap}
+                                domain={xAxisDomain as AxisDomain}
+                                allowDataOverflow={true}
+                                angle={rotateLabelX?.angle}
+                                dy={rotateLabelX?.verticalShift}
+                                height={rotateLabelX?.xAxisHeight}
+                            />
+                        ) : null}
+                        {y ? (
+                            <YAxis
+                                width={yAxisWidth}
+                                hide={!showYAxis}
+                                axisLine={false}
+                                tickLine={false}
+                                dataKey={y}
+                                type="number"
+                                name={y}
+                                domain={yAxisDomain as AxisDomain}
+                                tick={{ transform: "translate(-3, 0)" }}
+                                tickFormatter={valueFormatter.y}
+                                fill=""
+                                stroke=""
+                                className={tremorTwMerge(
+                                    // common
+                                    "text-tremor-label",
+                                    // light
+                                    "fill-tremor-content",
+                                    // dark
+                                    "dark:fill-dark-tremor-content",
+                                )}
+                                allowDecimals={allowDecimals}
+                                allowDataOverflow={true}
+                            />
+                        ) : null}
+                        <Tooltip
+                            wrapperStyle={{ outline: "none" }}
+                            isAnimationActive={false}
+                            cursor={{ stroke: "#d1d5db", strokeWidth: 1 }}
+                            content={
+                                showTooltip ? (
+                                    ({ active, payload, label }) => {
+                                        const color = category ? payload?.[0]?.payload?.[category] : label;
+                                        return CustomTooltip ? (
+                                            <CustomTooltip
+                                                payload={payload?.map((payloadItem) => ({
+                                                    ...payloadItem,
+                                                    color: categoryColors.get(color) ?? BaseColors.Gray,
+                                                }))}
+                                                active={active}
+                                                label={color}
+                                            />
+                                        ) : (
+                                            <ScatterChartTooltip
+                                                active={active}
+                                                payload={payload}
+                                                label={color}
+                                                valueFormatter={valueFormatter}
+                                                axis={{ x: x, y: y, size: size }}
+                                                category={category}
+                                                categoryColors={categoryColors}
+                                            />
+                                        );
+                                    }
+                                ) : (
+                                    <></>
+                                )
+                            }
+                        />
+                        {size ? <ZAxis dataKey={size} type="number" range={sizeRange} name={size} /> : null}
+                        {categories.map((cat) => {
+                            return (
+                                <Scatter
+                                    className={tremorTwMerge(
+                                        getColorClassNames(
+                                            categoryColors.get(cat) ?? BaseColors.Gray,
+                                            colorPalette.text,
+                                        ).fillColor,
+                                        showOpacity
+                                            ? getColorClassNames(
+                                                categoryColors.get(cat) ?? BaseColors.Gray,
+                                                colorPalette.text,
+                                            ).strokeColor
+                                            : "",
+                                        onValueChange ? "cursor-pointer" : "",
+                                    )}
+                                    fill={`url(#${categoryColors.get(cat)})`}
+                                    fillOpacity={showOpacity ? 0.7 : 1}
+                                    key={cat}
+                                    name={cat}
+                                    data={category ? data.filter((d) => d[category] === cat) : data}
+                                    isAnimationActive={showAnimation}
+                                    animationDuration={animationDuration}
+                                    shape={(props: any) => renderShape(props, activeNode, activeLegend)}
+                                    onClick={onNodeClick}
+                                />
+                            );
+                        })}
+                        {showLegend ? (
+                            <Legend
+                                verticalAlign="top"
+                                height={legendHeight}
+                                content={({ payload }) =>
+                                    ChartLegend(
+                                        { payload },
+                                        categoryColors,
+                                        setLegendHeight,
+                                        activeLegend,
+                                        hasOnValueChange
+                                            ? (clickedLegendItem: string) => onCategoryClick(clickedLegendItem)
+                                            : undefined,
+                                        enableLegendSlider,
+                                    )
+                                }
+                            />
+                        ) : null}
+                    </ReChartsScatterChart>
                 ) : (
-                  <></>
-                )
-              }
-            />
-            {size ? <ZAxis dataKey={size} type="number" range={sizeRange} name={size} /> : null}
-            {categories.map((cat) => {
-              return (
-                <Scatter
-                  className={tremorTwMerge(
-                    getColorClassNames(
-                      categoryColors.get(cat) ?? BaseColors.Gray,
-                      colorPalette.text,
-                    ).fillColor,
-                    showOpacity
-                      ? getColorClassNames(
-                          categoryColors.get(cat) ?? BaseColors.Gray,
-                          colorPalette.text,
-                        ).strokeColor
-                      : "",
-                    onValueChange ? "cursor-pointer" : "",
-                  )}
-                  fill={`url(#${categoryColors.get(cat)})`}
-                  fillOpacity={showOpacity ? 0.7 : 1}
-                  key={cat}
-                  name={cat}
-                  data={category ? data.filter((d) => d[category] === cat) : data}
-                  isAnimationActive={showAnimation}
-                  animationDuration={animationDuration}
-                  shape={(props: any) => renderShape(props, activeNode, activeLegend)}
-                  onClick={onNodeClick}
-                />
-              );
-            })}
-            {showLegend ? (
-              <Legend
-                verticalAlign="top"
-                height={legendHeight}
-                content={({ payload }) =>
-                  ChartLegend(
-                    { payload },
-                    categoryColors,
-                    setLegendHeight,
-                    activeLegend,
-                    hasOnValueChange
-                      ? (clickedLegendItem: string) => onCategoryClick(clickedLegendItem)
-                      : undefined,
-                    enableLegendSlider,
-                  )
-                }
-              />
-            ) : null}
-          </ReChartsScatterChart>
-        ) : (
-          <NoData noDataText={noDataText} />
-        )}
-      </ResponsiveContainer>
-    </div>
-  );
+                    <NoData noDataText={noDataText} />
+                )}
+            </ResponsiveContainer>
+        </div>
+    );
 });
 
 ScatterChart.displayName = "ScatterChart";

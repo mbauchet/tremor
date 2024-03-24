@@ -37,6 +37,7 @@ export interface LineChartProps extends BaseChartProps {
   curveType?: CurveType;
   connectNulls?: boolean;
   defaultActiveCategory?: string;
+  defaultActiveDot?: ActiveDot;
 }
 
 interface ActiveDot {
@@ -75,13 +76,14 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>((props, ref) 
     rotateLabelX,
     tickGap = 5,
     defaultActiveCategory,
+    defaultActiveDot,
     ...other
   } = props;
   const CustomTooltip = customTooltip;
   const paddingValue = !showXAxis && !showYAxis ? 0 : 20;
   const [legendHeight, setLegendHeight] = useState(60);
-  const [activeDot, setActiveDot] = useState<ActiveDot | undefined>(undefined);
-  const [activeLegend, setActiveLegend] = useState<string | undefined>(defaultActiveCategory);
+  const [activeDot, setActiveDot] = useState<ActiveDot | undefined>(defaultActiveDot);
+  const [activeLegend, setActiveLegend] = useState<string | undefined>(defaultActiveCategory ?? defaultActiveDot?.dataKey);
   const categoryColors = constructCategoryColors(categories, colors);
 
   const yAxisDomain = getYAxisDomain(autoMinValue, minValue, maxValue);

@@ -367,3 +367,9 @@ export const defaultActiveCategory: Story = {
       defaultActiveCategory: "Sales",
     },
 };
+
+export const defaultActiveDot: Story = {
+    args: {
+      defaultActiveDot: {index: 2, dataKey: "Sales"},
+    },
+};

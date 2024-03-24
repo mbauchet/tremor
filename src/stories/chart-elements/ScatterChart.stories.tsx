@@ -193,6 +193,12 @@ export const tickGap: Story = {
 
 export const defaultActiveCategory: Story = {
     args: {
-      defaultActiveCategory: "Sales",
+      defaultActiveCategory: "Location D",
+    },
+};
+
+export const defaultActiveNode: Story = {
+    args: {
+      defaultActiveNode: {index: 2},
     },
 };

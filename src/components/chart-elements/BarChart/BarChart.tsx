@@ -56,11 +56,17 @@ const renderShape = (
   );
 };
 
+interface ActiveBar {
+    index?: number;
+    dataKey?: string;
+  }
+
 export interface BarChartProps extends BaseChartProps {
   layout?: "vertical" | "horizontal";
   stack?: boolean;
   relative?: boolean;
   defaultActiveCategory?: string;
+  defaultActiveBar?: ActiveBar;
 }
 
 const BarChart = React.forwardRef<HTMLDivElement, BarChartProps>((props, ref) => {
@@ -95,14 +101,16 @@ const BarChart = React.forwardRef<HTMLDivElement, BarChartProps>((props, ref) =>
     tickGap = 5,
     className,
     defaultActiveCategory,
+    defaultActiveBar,
     ...other
   } = props;
   const CustomTooltip = customTooltip;
   const paddingValue = !showXAxis && !showYAxis ? 0 : 20;
   const [legendHeight, setLegendHeight] = useState(60);
   const categoryColors = constructCategoryColors(categories, colors);
-  const [activeBar, setActiveBar] = React.useState<any | undefined>(undefined);
-  const [activeLegend, setActiveLegend] = useState<string | undefined>(defaultActiveCategory);
+  const findedActiveBar = data.find((_, i) => i === defaultActiveBar?.index);
+  const [activeBar, setActiveBar] = React.useState<any | undefined>(defaultActiveBar?.dataKey ? {...findedActiveBar, value: findedActiveBar?.[defaultActiveBar.dataKey]} : undefined);
+  const [activeLegend, setActiveLegend] = useState<string | undefined>(defaultActiveCategory ?? defaultActiveBar?.dataKey);
   const hasOnValueChange = !!onValueChange;
 
   function onBarClick(data: any, idx: number, event: React.MouseEvent) {
