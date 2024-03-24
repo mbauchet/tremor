@@ -33,12 +33,14 @@ import {
   tremorTwMerge,
 } from "lib";
 import { CurveType } from "../../../lib/inputTypes";
+import { useInternalState } from "hooks";
 
 export interface AreaChartProps extends BaseChartProps {
   stack?: boolean;
   curveType?: CurveType;
   connectNulls?: boolean;
   showGradient?: boolean;
+  defaultActiveCategory?: string;
 }
 
 interface ActiveDot {
@@ -78,13 +80,15 @@ const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>((props, ref) 
     customTooltip,
     rotateLabelX,
     tickGap = 5,
+    defaultActiveCategory,
     ...other
   } = props;
   const CustomTooltip = customTooltip;
   const paddingValue = (!showXAxis && !showYAxis) || (startEndOnly && !showYAxis) ? 0 : 20;
   const [legendHeight, setLegendHeight] = useState(60);
   const [activeDot, setActiveDot] = useState<ActiveDot | undefined>(undefined);
-  const [activeLegend, setActiveLegend] = useState<string | undefined>(undefined);
+  const [activeLegend, setActiveLegend] = useState<string | undefined>(defaultActiveCategory);
+
   const categoryColors = constructCategoryColors(categories, colors);
 
   const yAxisDomain = getYAxisDomain(autoMinValue, minValue, maxValue);

@@ -171,3 +171,9 @@ export const CustomTooltipSimple: Story = {
     },
   },
 };
+
+export const defaultActiveCategory: Story = {
+    args: {
+      defaultActiveCategory: "New York",
+    },
+};

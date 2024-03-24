@@ -60,6 +60,7 @@ export interface BarChartProps extends BaseChartProps {
   layout?: "vertical" | "horizontal";
   stack?: boolean;
   relative?: boolean;
+  defaultActiveCategory?: string;
 }
 
 const BarChart = React.forwardRef<HTMLDivElement, BarChartProps>((props, ref) => {
@@ -93,6 +94,7 @@ const BarChart = React.forwardRef<HTMLDivElement, BarChartProps>((props, ref) =>
     rotateLabelX,
     tickGap = 5,
     className,
+    defaultActiveCategory,
     ...other
   } = props;
   const CustomTooltip = customTooltip;
@@ -100,7 +102,7 @@ const BarChart = React.forwardRef<HTMLDivElement, BarChartProps>((props, ref) =>
   const [legendHeight, setLegendHeight] = useState(60);
   const categoryColors = constructCategoryColors(categories, colors);
   const [activeBar, setActiveBar] = React.useState<any | undefined>(undefined);
-  const [activeLegend, setActiveLegend] = useState<string | undefined>(undefined);
+  const [activeLegend, setActiveLegend] = useState<string | undefined>(defaultActiveCategory);
   const hasOnValueChange = !!onValueChange;
 
   function onBarClick(data: any, idx: number, event: React.MouseEvent) {

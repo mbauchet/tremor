@@ -80,6 +80,7 @@ export interface ScatterChartProps
     xAxisHeight: number;
   };
   tickGap?: number;
+  defaultActiveCategory?: string;
 }
 
 const renderShape = (props: any, activeNode: any | undefined, activeLegend: string | undefined) => {
@@ -140,12 +141,13 @@ const ScatterChart = React.forwardRef<HTMLDivElement, ScatterChartProps>((props,
     className,
     enableLegendSlider = false,
     tickGap = 5,
+    defaultActiveCategory,
     ...other
   } = props;
   const CustomTooltip = customTooltip;
   const [legendHeight, setLegendHeight] = useState(60);
   const [activeNode, setActiveNode] = React.useState<any | undefined>(undefined);
-  const [activeLegend, setActiveLegend] = useState<string | undefined>(undefined);
+  const [activeLegend, setActiveLegend] = useState<string | undefined>(defaultActiveCategory);
   const hasOnValueChange = !!onValueChange;
 
   function onNodeClick(data: any, index: number, event: React.MouseEvent) {

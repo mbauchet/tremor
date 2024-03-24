@@ -190,3 +190,9 @@ export const tickGap: Story = {
     tickGap: 500,
   },
 };
+
+export const defaultActiveCategory: Story = {
+    args: {
+      defaultActiveCategory: "Sales",
+    },
+};
